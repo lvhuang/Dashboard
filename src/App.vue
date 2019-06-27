@@ -1,6 +1,8 @@
 <template>
   <div id="app">
+    <div>
    <ControlPanel></ControlPanel>
+   </div>
   </div>
 </template>
 

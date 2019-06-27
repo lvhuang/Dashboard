@@ -8,9 +8,13 @@
             <a-icon type="appstore"/>
             <span>Dashboad</span>
           </span>
-          <a-menu-item key="1">分析页</a-menu-item>
-          <a-menu-item key="2">监控页</a-menu-item>
-          <a-menu-item key="3">工作台</a-menu-item>
+          <a-menu-item key="1">
+            <router-link :to="'/A'">分析页</router-link>
+          </a-menu-item>
+          <a-menu-item key="2">
+            <router-link :to="'/B'">工作台</router-link>
+          </a-menu-item>
+          <a-menu-item key="3">监控页</a-menu-item>
         </a-sub-menu>
         <a-sub-menu key="sub2">
           <span slot="title">
@@ -87,7 +91,9 @@
       </a-layout-header>
       <a-layout-content
         :style="{ margin: '24px 16px', padding: '24px', background: '#fff', minHeight: '280px' }"
-      >Content</a-layout-content>
+      >
+        <router-view></router-view>
+      </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
