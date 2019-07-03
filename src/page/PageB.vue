@@ -51,11 +51,10 @@
     <div>
       <a-table
         :columns="columns"
-        :rowKey="record => record.login.uuid"
-        :dataSource="SS"
+        :rowKey="record => record.uuid"
+        :dataSource="dataSource"
         :pagination="pagination"
         :loading="loading"
-        @change="handleTableChange"
       >
         <template slot="name" slot-scope="name">{{name.first}} {{name.last}}</template>
       </a-table>
@@ -70,25 +69,41 @@ import axios from "axios";
 
 const columns = [
   {
-    title: "Name",
-    dataIndex: "name",
+    title: "Product(CHN)",
+    dataIndex: "product_chn",
+
+    width: "20%",
+    scopedSlots: { customRender: "product_chn" }
+  },
+  {
+    title: "Segment",
+    dataIndex: "segment_eng",
     sorter: true,
     width: "20%",
-    scopedSlots: { customRender: "name" }
+    scopedSlots: { customRender: "segment_eng" }
   },
   {
-    title: "Gender",
-    dataIndex: "gender",
-    filters: [
-      { text: "Male", value: "male" },
-      { text: "Female", value: "female" }
-    ],
-    width: "20%"
+    title: "Group(ENG)",
+    dataIndex: "group_eng",
+    sorter: true,
+    width: "20%",
+    scopedSlots: { customRender: "group_eng" }
   },
   {
-    title: "Email",
-    dataIndex: "email"
-  }
+    title: "Brand(ENG)",
+    dataIndex: "brand_chn",
+    sorter: true,
+    width: "20%",
+    scopedSlots: { customRender: "brand_chn" }
+  },
+    {
+    title: "Action",
+    dataIndex: "",
+    sorter: true,
+    width: "20%",
+    scopedSlots: { customRender: "" }
+  },
+
 ];
 
 export default {
@@ -98,7 +113,7 @@ export default {
       department: Array,
       category_eng: Array,
       group_eng: Array,
-      SS: [],
+      dataSource: [],
       pagination: {},
       loading: false,
       columns
@@ -109,7 +124,6 @@ export default {
   mounted() {
     this.getQuery();
     this.getProdmap();
-    this.tablelist();
   },
   methods: {
     handleChange(value) {
@@ -121,13 +135,7 @@ export default {
     handleFocus() {
       console.log("focus");
     },
-    filterOption(input, option) {
-      return (
-        option.componentOptions.children[0].text
-          .toLowerCase()
-          .indexOf(input.toLowerCase()) >= 0
-      );
-    },
+
     getQuery() {
       axios
         .get(
@@ -135,7 +143,7 @@ export default {
           {
             headers: {
               Authorization:
-                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTM5MDA3LCJvcmlnX2lhdCI6MTU2MjEyMTAwN30.2T54Qf9byx-exCWTDNbtqCHf2J91AjNHi-4OQMP9UnI"
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTU3MzUzLCJvcmlnX2lhdCI6MTU2MjEzOTM1M30.410_5THlsdLZQJDc-KPtGNLtbaeAEFd5LiFBxmx8i9U"
             }
           }
         )
@@ -155,14 +163,13 @@ export default {
           {
             headers: {
               Authorization:
-                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTM5MDA3LCJvcmlnX2lhdCI6MTU2MjEyMTAwN30.2T54Qf9byx-exCWTDNbtqCHf2J91AjNHi-4OQMP9UnI"
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTU3MzUzLCJvcmlnX2lhdCI6MTU2MjEzOTM1M30.410_5THlsdLZQJDc-KPtGNLtbaeAEFd5LiFBxmx8i9U"
             },
             params: {
-              limit: 10,
+              limit: 500,
               offset: 0,
               ordering: "",
               search: "",
-
               product_chn__icontains: "",
               newprod: "",
               department: "",
@@ -171,62 +178,12 @@ export default {
             }
           }
         )
-        .then(response => console.log(response))
+        .then(response => {
+          console.log(response);
+          this.dataSource = response.data.results;
+        })
         .catch(function(error) {
           console.error(error);
-        });
-    },
-    handleTableChange(pagination, filters, sorter) {
-      console.log(pagination);
-      const pager = { ...this.pagination };
-      pager.current = pagination.current;
-      this.pagination = pager;
-      this.tablelist({
-        results: pagination.pageSize,
-        page: pagination.current,
-        sortField: sorter.field,
-        sortOrder: sorter.order,
-        ...filters
-      });
-    },
-    tablelist(params = {}) {
-      this.loading = true;
-      // reqwest({
-      //   url: 'https://randomuser.me/api',
-      //   method: 'get',
-      //   data: {
-      //     results: 10,
-      //     ...params,
-      //   },
-      //   type: 'json',
-      // }).then((data) => {
-      //   const pagination = { ...this.pagination };
-      //   // Read total count from server
-      //   // pagination.total = data.totalCount;
-      //   pagination.total = 200;
-      //   this.loading = false;
-      //   this.data = data.results;
-      //   this.pagination = pagination;
-      // });
-      axios
-        .get("https://randomuser.me/api", {
-          headers: {
-            Authorization:
-              "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTM5MDA3LCJvcmlnX2lhdCI6MTU2MjEyMTAwN30.2T54Qf9byx-exCWTDNbtqCHf2J91AjNHi-4OQMP9UnI"
-          },
-
-          params: {
-            results: 10
-          }
-        })
-        .then(SS => {
-          const pagination = { ...this.pagination };
-          // Read total count from server
-          // pagination.total = data.totalCount;
-          pagination.total = 200;
-          this.loading = false;
-          this.SS = SS.data.results;
-          this.pagination = pagination;
         });
     }
   }
