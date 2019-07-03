@@ -57,6 +57,15 @@
         :loading="loading"
       >
         <template slot="name" slot-scope="name">{{name.first}} {{name.last}}</template>
+        <template slot="action" slot-scope="text, record">
+          <a-popconfirm
+            v-if="dataSource.length"
+            title="Sure to delete?"
+            @confirm="() => onDelete(record.uuid)"
+          >
+            <a href="javascript:;">Delete</a>
+          </a-popconfirm>
+        </template>
       </a-table>
     </div>
   </div>
@@ -71,7 +80,6 @@ const columns = [
   {
     title: "Product(CHN)",
     dataIndex: "product_chn",
-
     width: "20%",
     scopedSlots: { customRender: "product_chn" }
   },
@@ -96,14 +104,12 @@ const columns = [
     width: "20%",
     scopedSlots: { customRender: "brand_chn" }
   },
-    {
+  {
     title: "Action",
-    dataIndex: "",
-    sorter: true,
+    dataIndex: "action",
     width: "20%",
-    scopedSlots: { customRender: "" }
-  },
-
+    scopedSlots: { customRender: "action" }
+  }
 ];
 
 export default {
@@ -135,7 +141,6 @@ export default {
     handleFocus() {
       console.log("focus");
     },
-
     getQuery() {
       axios
         .get(
@@ -179,13 +184,18 @@ export default {
           }
         )
         .then(response => {
-          console.log(response);
+          // console.log(response);
           this.dataSource = response.data.results;
         })
         .catch(function(error) {
           console.error(error);
         });
-    }
+    },
+    onDelete (uuid) {
+      const dataSource = [...this.dataSource]
+      console.log(dataSource);
+      this.dataSource = dataSource.filter(item => item.uuid!== uuid)
+    },
   }
 };
 </script>
