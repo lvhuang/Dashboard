@@ -14,10 +14,12 @@
           style="width: 200px"
           @focus="handleFocus"
           @blur="handleBlur"
-          @change="handleChange"
+          @change="handleChange(index)"
+          v-model="index"
         >
           <a-select-option v-for="index in department" :key="index">{{index}}</a-select-option>
         </a-select>
+        <span>Selected: {{ index }}</span>
       </div>
       <div class="put">
         <p>Category:</p>
@@ -28,10 +30,12 @@
           style="width: 200px"
           @focus="handleFocus"
           @blur="handleBlur"
-          @change="handleChange"
+          @change="handleChange(item)"
+          v-model="item"
         >
-          <a-select-option v-for="index in category_eng" :key="index">{{index}}</a-select-option>
+          <a-select-option v-for="item in category_eng" :key="item">{{item}}</a-select-option>
         </a-select>
+        <span>Selected: {{ item }}</span>
       </div>
       <div class="put">
         <p>Group(ENG):</p>
@@ -42,10 +46,22 @@
           style="width: 200px"
           @focus="handleFocus"
           @blur="handleBlur"
-          @change="handleChange"
+          @change="handleChange(value)"
+          v-model="value"
         >
-          <a-select-option v-for="index in group_eng" :key="index">{{index}}</a-select-option>
+          <a-select-option v-for="value in group_eng" :key="value">{{value}}</a-select-option>
         </a-select>
+        <span>Selected: {{ value }}</span>
+      </div>
+      <div>
+        <a type="primary" @click="showModalNew" @PostNew="PostNew" href="javascript:;">+New</a>
+        <a-modal title="Basic Modal" v-model="visibleNew" @ok="handleOkNew(New)">
+          <p>brand_chn:{{New}}</p>
+          <a-input size="large" placeholder="large size" v-model="New" />
+        </a-modal>
+      </div>
+      <div>
+        <a-button type="primary" icon="search" @click="search(index,item,value)" @getsearch="getsearch">Search</a-button>
       </div>
     </div>
     <div>
@@ -65,6 +81,13 @@
           >
             <a href="javascript:;">Delete</a>
           </a-popconfirm>
+          <div>
+            <a type="primary" @click="showModal(record.uuid)" @edit="edit" href="javascript:;">Edit</a>
+            <a-modal title="Basic Modal" v-model="visible" @ok="handleOk(res)">
+              <p>brand_chn:{{res.brand_chn}}</p>
+              <a-input size="large" placeholder="large size" v-model="res.brand_chn" />
+            </a-modal>
+          </div>
         </template>
       </a-table>
     </div>
@@ -122,7 +145,14 @@ export default {
       dataSource: [],
       pagination: {},
       loading: false,
-      columns
+      columns,
+      visible: false,
+      visibleNew: false,
+      res: {},
+      New: "",
+      index: "",
+      item: "",
+      value: ""
     };
   },
   props: {},
@@ -134,6 +164,7 @@ export default {
   methods: {
     handleChange(value) {
       console.log(`selected ${value}`);
+      return value;
     },
     handleBlur() {
       console.log("blur");
@@ -148,7 +179,7 @@ export default {
           {
             headers: {
               Authorization:
-                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTU3MzUzLCJvcmlnX2lhdCI6MTU2MjEzOTM1M30.410_5THlsdLZQJDc-KPtGNLtbaeAEFd5LiFBxmx8i9U"
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
             }
           }
         )
@@ -168,7 +199,7 @@ export default {
           {
             headers: {
               Authorization:
-                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMTU3MzUzLCJvcmlnX2lhdCI6MTU2MjEzOTM1M30.410_5THlsdLZQJDc-KPtGNLtbaeAEFd5LiFBxmx8i9U"
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
             },
             params: {
               limit: 500,
@@ -191,11 +222,155 @@ export default {
           console.error(error);
         });
     },
-    onDelete (uuid) {
-      const dataSource = [...this.dataSource]
-      console.log(dataSource);
-      this.dataSource = dataSource.filter(item => item.uuid!== uuid)
+    onDelete(uuid) {
+      axios
+        .delete(
+          "http://adopt-api-dev.azurewebsites.net/api/v1/competitive/prodmap/" +
+            uuid +
+            "/",
+          {
+            headers: {
+              Authorization:
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
+            }
+          }
+        )
+        .then(response => {
+          this.getProdmap();
+        })
+        .catch(function(error) {
+          console.error(error);
+        });
     },
+    showModal(uuid) {
+      this.visible = true;
+      this.edit(uuid);
+      // this.New();
+    },
+    edit(uuid) {
+      axios
+        .get(
+          "http://adopt-api-dev.azurewebsites.net/api/v1/competitive/prodmap/" +
+            uuid +
+            "/",
+          {
+            headers: {
+              Authorization:
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
+            }
+          }
+        )
+        .then(response => {
+          this.res = response.data;
+          // this.dataSource = response.data.results;
+        })
+        .catch(function(error) {
+          console.error(error);
+        });
+    },
+    put(data) {
+      axios
+        .put(
+          "http://adopt-api-dev.azurewebsites.net/api/v1/competitive/prodmap/" +
+            data.uuid +
+            "/",
+          data,
+          {
+            headers: {
+              Authorization:
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
+            }
+          }
+        )
+        .then(response => {
+          console.log(response);
+          this.getProdmap();
+          // this.dataSource = response.data.results;
+        })
+        .catch(function(error) {
+          console.error(error);
+        });
+    },
+    showModalNew() {
+      this.visibleNew = true;
+    },
+    handleOkNew(data) {
+      this.visibleNew = false;
+      const dataNew = {
+        brand_chn: data,
+        brand_eng: "Clarins",
+        category_eng: "Skincare",
+        department: "FBP",
+        group_chn: "娇韵诗集团",
+        group_eng: "Clarins Group",
+        product_chn: "娇韵诗 黄金双瓶双萃焕活修护精华露",
+        product_eng: "Clarins Double Serum Essence",
+        segment_eng: "Facecare",
+        subsegment_eng: "Facecare: Anti-Aging",
+        tags: [],
+        index: ""
+      };
+      this.PostNew(dataNew);
+    },
+    PostNew(data) {
+      axios
+        .post(
+          "http://adopt-api-dev.azurewebsites.net/api/v1/competitive/prodmap/",
+          data,
+          {
+            headers: {
+              Authorization:
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
+            }
+          }
+        )
+        .then(response => {
+          console.log(response);
+          this.getProdmap();
+          // this.dataSource = response.data.results;
+        })
+        .catch(function(error) {
+          console.error(error);
+        });
+    },
+    handleOk(e) {
+      console.log(e);
+      this.visible = false;
+      this.put(e);
+    },
+    search(index,item,value) {
+      this.getsearch(index,item,value);
+    },
+    getsearch(index,item,value) {
+      axios
+        .get(
+          "http://adopt-api-dev.azurewebsites.net/api/v1/competitive/prodmap/",
+          {
+            headers: {
+              Authorization:
+                "JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY2xpZW50IjoiY2hhbmVsIiwiZXhwIjoxNTYyMjQ5NzEzLCJvcmlnX2lhdCI6MTU2MjIzMTcxM30.1pcaJkFKyHe5dhbce8pEva5dXdMn_gQuWAo6yRVduNg"
+            },
+            params: {
+              limit: 500,
+              offset: 0,
+              ordering: "",
+              search: "",
+              product_chn__icontains: "",
+              newprod: "",
+              department: index,
+              category_eng: item,
+              group_eng: value
+            }
+          }
+        )
+        .then(response => {
+          // console.log(response);
+          this.dataSource = response.data.results;
+        })
+        .catch(function(error) {
+          console.error(error);
+        });
+    }
   }
 };
 </script>
